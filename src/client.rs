@@ -6,11 +6,15 @@ use num_traits::One;
 use rand::rngs::OsRng;
 use num_bigint::{BigUint, RandBigInt};
 
-use crate::models::Params;
-use crate::constants::PARAMS;
-
 pub mod zkp_auth {
     tonic::include_proto!("zkp_auth");
+}
+
+pub struct Params {
+    pub p: BigUint,
+    pub q: BigUint,
+    pub g: BigUint,
+    pub h: BigUint,
 }
 
 pub fn commitment(params: &Params, x: &BigUint) -> ((BigUint, BigUint, BigUint, BigUint), BigUint) {
@@ -42,10 +46,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let num: u64 = 123456789;
     let x = &BigUint::from(num);
+    let params = Params {
+        p: BigUint::from(23u32),
+        q: BigUint::from(11u32),
+        g: BigUint::from(4u32),
+        h: BigUint::from(9u32)
+    };
 
-    let params = &*PARAMS;
-
-    let ((y1, y2, r1, r2), k) = commitment(params, x);
+    let ((y1, y2, r1, r2), k) = commitment(&params, x);
 
     let register_request = Request::new(RegisterRequest {
         user: "Luc".into(),
@@ -67,7 +75,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Authentication Challenge Response: {:?}", inner.auth_id);
 
     let challenge = BigUint::from_bytes_be(&inner.c);
-    let cr = challenge_response(params, &k, &challenge, x);
+    let cr = challenge_response(&params, &k, &challenge, x);
 
     // Example: Verify Authentication
     let auth_verify_request = Request::new(AuthenticationAnswerRequest {

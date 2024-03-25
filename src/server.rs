@@ -10,11 +10,28 @@ use num_bigint::{BigUint, RandBigInt};
 use num_traits::One;
 use rand::rngs::OsRng;
 
-use crate::models::{AuthChallenge, User, Params};
-use crate::constants::PARAMS;
-
 pub mod zkp_auth {
     tonic::include_proto!("zkp_auth");
+}
+
+pub struct User {
+    pub name: String,
+    pub y1: BigUint,
+    pub y2: BigUint,
+}
+
+pub struct AuthChallenge {
+    pub username: String,
+    pub r1: BigUint,
+    pub r2: BigUint,
+    pub c: BigUint,
+}
+
+pub struct Params {
+    pub p: BigUint,
+    pub q: BigUint,
+    pub g: BigUint,
+    pub h: BigUint,
 }
 
 #[derive(Default)]
@@ -53,7 +70,13 @@ impl Auth for AuthService {
         
         let req = request.into_inner();
 
-        let params = &*PARAMS;
+        let params = Params {
+            p: BigUint::from(23u32),
+            q: BigUint::from(11u32),
+            g: BigUint::from(4u32),
+            h: BigUint::from(9u32)
+        };
+
         let mut rng = OsRng;
         let c = rng.gen_biguint_below(&params.p);
 
@@ -98,7 +121,12 @@ impl Auth for AuthService {
 
         let (y1, y2, r1, r2) = (&user.y1, &user.y2, &c.r1, &c.r2);
 
-        let params = &*PARAMS;
+        let params = Params {
+            p: BigUint::from(23u32),
+            q: BigUint::from(11u32),
+            g: BigUint::from(4u32),
+            h: BigUint::from(9u32)
+        };
 
         let lhs1 = params.g.modpow(s, &params.p);
         let rhs1 = (r1 * y1.modpow(&(&params.p - &c.c - BigUint::one()), &params.p)) % &params.p;
